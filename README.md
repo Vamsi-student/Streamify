@@ -609,16 +609,6 @@ cd frontend && npm run build
 
 ---
 
-## 👤 Author
-
-Built with a focus on production-grade patterns, security best practices, and modern developer experience.
-
-**Vamsi** — Full Stack Developer
-
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-
----
 
 <p align="center">
   <sub>If you found this project useful, consider giving it a ⭐ on GitHub!</sub>
