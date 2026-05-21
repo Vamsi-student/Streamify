@@ -1,40 +1,28 @@
 import "dotenv/config";
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import {
   verificationOTPEmail,
   passwordResetOTPEmail,
   welcomeEmail,
 } from "./email/templates.js";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  family: 4,
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || "");
 
 const FROM = process.env.SMTP_FROM || "Streamify <noreply@streamify.app>";
 
 async function sendEmail({ to, subject, html }) {
   try {
-    const info = await transporter.sendMail({
+    const [response] = await sgMail.send({
       from: FROM,
       to,
       subject,
       html,
     });
 
-    console.log(`Email sent to ${to}: ${subject} (id: ${info.messageId})`);
-    return info;
+    console.log(`Email sent to ${to}: ${subject} (status: ${response.statusCode})`);
+    return response;
   } catch (err) {
-    console.error("Error sending email:", err);
+    console.error("Error sending email:", err.response?.body || err);
     throw err;
   }
 }
@@ -71,11 +59,11 @@ export async function sendOTPEmail(email, otp, purpose = "verification") {
 }
 
 export async function verifyEmailConfig() {
-  try {
-    await transporter.verify();
-    console.log("SMTP: Connected successfully");
-  } catch (err) {
-    console.error("SMTP: Connection failed —", err.message);
-    console.error("SMTP: Full error:", err);
+  if (!process.env.SENDGRID_API_KEY) {
+    console.error("SendGrid: SENDGRID_API_KEY is not set");
+    return;
+  }
+  if (process.env.NODE_ENV !== "production") {
+    console.log("SendGrid: API key is configured");
   }
 }
