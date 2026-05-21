@@ -4,7 +4,7 @@ import { Link } from "react-router";
 
 import useSignUp from "../hooks/useSignUp";
 
-const GOOGLE_AUTH_URL = `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/auth/google`;
+const GOOGLE_AUTH_URL = `${import.meta.env.VITE_API_URL}/auth/google`;
 
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
