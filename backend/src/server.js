@@ -33,7 +33,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https://api.dicebear.com", "https://*.stream-io-cdn.com"],
-      connectSrc: ["'self'", "https://*.stream-io-cdn.com", "wss://*.stream-io-cdn.com", ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : [])],
+      connectSrc: ["'self'", "https://*.stream-io-cdn.com", "wss://*.stream-io-cdn.com", "https://*.stream-io-api.com", "wss://*.stream-io-api.com", ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : [])],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'", "https://*.stream-io-cdn.com"],

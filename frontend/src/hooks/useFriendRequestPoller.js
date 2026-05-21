@@ -1,16 +1,19 @@
 import { useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getFriendReqs } from "../lib/api";
+import useAuthUser from "./useAuthUser";
 import toast from "react-hot-toast";
 
 const useFriendRequestPoller = () => {
+  const { authUser } = useAuthUser();
   const queryClient = useQueryClient();
   const prevCountRef = useRef(0);
 
   const { data } = useQuery({
     queryKey: ["friendRequests"],
     queryFn: getFriendReqs,
-    refetchInterval: 20000,
+    enabled: !!authUser,
+    refetchInterval: !!authUser ? 20000 : false,
     retry: 3,
   });
 

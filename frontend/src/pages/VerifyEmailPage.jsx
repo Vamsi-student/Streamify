@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { verifyEmail, resendOTP, logout } from "../lib/api";
 import { MailIcon, ArrowLeftIcon, RefreshCwIcon, LogOutIcon } from "lucide-react";
@@ -8,6 +8,7 @@ import useAuthUser from "../hooks/useAuthUser";
 
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { authUser, isLoading } = useAuthUser();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
@@ -147,8 +148,8 @@ const VerifyEmailPage = () => {
         </div>
 
         <div className="flex justify-center gap-4 mt-2">
-          <button onClick={() => navigate(-1)} className="btn btn-ghost btn-xs gap-1">
-            <ArrowLeftIcon className="size-3" /> Back
+          <button onClick={logoutMutation} className="btn btn-ghost btn-xs gap-1">
+            <ArrowLeftIcon className="size-3" /> Back to Login
           </button>
           <button onClick={logoutMutation} className="btn btn-ghost btn-xs gap-1 text-error">
             <LogOutIcon className="size-3" /> Sign out
