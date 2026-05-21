@@ -188,6 +188,9 @@ export async function resendOTP(req, res) {
     } catch (emailError) {
       console.error("Failed to send OTP email:", emailError.message);
       console.log(`\n📧 DEV OTP for ${user.email}: ${otp}\n`);
+      user.verificationOTP = null;
+      user.verificationOTPExpires = null;
+      await user.save();
       return res.status(500).json({ message: "Failed to send OTP. Try again later." });
     }
 
