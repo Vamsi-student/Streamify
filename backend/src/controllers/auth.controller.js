@@ -104,8 +104,10 @@ export async function signup(req, res) {
     try {
       await sendOTPEmail(newUser.email, otp, "verification");
     } catch (emailError) {
-      console.error("Failed to send verification email:", emailError.message);
+      console.error("Failed to send verification email:", emailError);
       console.log(`\n📧 DEV OTP for ${newUser.email}: ${otp}\n`);
+      await User.findByIdAndDelete(newUser._id);
+      return res.status(500).json({ message: "Failed to send verification email. Please try signing up again." });
     }
 
     const tokens = await generateTokens(newUser._id);
@@ -186,7 +188,7 @@ export async function resendOTP(req, res) {
     try {
       await sendOTPEmail(user.email, otp, "verification");
     } catch (emailError) {
-      console.error("Failed to send OTP email:", emailError.message);
+      console.error("Failed to send OTP email:", emailError);
       console.log(`\n📧 DEV OTP for ${user.email}: ${otp}\n`);
       user.verificationOTP = null;
       user.verificationOTPExpires = null;

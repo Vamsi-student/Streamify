@@ -33,7 +33,7 @@ async function sendEmail({ to, subject, html }) {
     console.log(`Email sent to ${to}: ${subject} (id: ${info.messageId})`);
     return info;
   } catch (err) {
-    console.error("Error sending email:", err.message);
+    console.error("Error sending email:", err);
     throw err;
   }
 }
@@ -67,4 +67,14 @@ export async function sendOTPEmail(email, otp, purpose = "verification") {
     return sendPasswordResetOTP(email, otp);
   }
   return sendVerificationOTP(email, otp);
+}
+
+export async function verifyEmailConfig() {
+  try {
+    await transporter.verify();
+    console.log("SMTP: Connected successfully");
+  } catch (err) {
+    console.error("SMTP: Connection failed —", err.message);
+    console.error("SMTP: Full error:", err);
+  }
 }

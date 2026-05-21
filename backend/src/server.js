@@ -10,6 +10,7 @@ import WebhookRoutes from "./routes/webhook.route.js"
 import { connectDB } from "./lib/db.js";
 import mongoose from "mongoose";
 import "./lib/passport.js";
+import { verifyEmailConfig } from "./lib/email.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
@@ -81,6 +82,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await connectDB();
+    await verifyEmailConfig();
     const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
     });
