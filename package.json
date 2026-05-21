@@ -1,0 +1,22 @@
+{
+  "name": "streamify",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">   <b>A Production-Grade Real-Time Chat & Social Platform for Language Exchange</b> </p>",
+  "main": "index.js",
+  "scripts": {
+    "build":"npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
+    "start":"npm run start --prefix backend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vamsi-student/Streamify.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Vamsi-student/Streamify/issues"
+  },
+  "homepage": "https://github.com/Vamsi-student/Streamify#readme"
+}
