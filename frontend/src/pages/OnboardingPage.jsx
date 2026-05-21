@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -18,6 +18,45 @@ const OnboardingPage = () => {
     location: authUser?.location || "",
     profilePic: authUser?.profilePic || "",
   });
+
+  const autoRan = useRef(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [locationDetected, setLocationDetected] = useState(false);
+
+  useEffect(() => {
+    if (autoRan.current) return;
+    if (authUser?.location) return;
+    if (!navigator.geolocation) return;
+    autoRan.current = true;
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`,
+            { headers: { "User-Agent": "Streamify/1.0" } }
+          );
+          const data = await res.json();
+          const city = data.address?.city || data.address?.town || data.address?.village || "";
+          const country = data.address?.country || "";
+          const detected = [city, country].filter(Boolean).join(", ");
+          if (detected) {
+            setFormState((prev) => ({ ...prev, location: detected }));
+            setLocationDetected(true);
+          }
+        } catch {
+          console.log("Could not determine location from coordinates");
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      () => {
+        setIsDetectingLocation(false);
+      },
+      { timeout: 10000 }
+    );
+  }, []);
 
   const { mutate: onboardingMutation, isPending } = useMutation({
     mutationFn: completeOnboarding,
@@ -154,6 +193,12 @@ const OnboardingPage = () => {
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Location</span>
+                {locationDetected && (
+                  <span className="badge badge-success badge-xs gap-1">
+                    <MapPinIcon className="size-3" />
+                    Auto-detected
+                  </span>
+                )}
               </label>
               <div className="relative">
                 <MapPinIcon className="absolute top-1/2 transform -translate-y-1/2 left-3 size-5 text-base-content opacity-70" />
@@ -162,9 +207,12 @@ const OnboardingPage = () => {
                   name="location"
                   value={formState.location}
                   onChange={(e) => setFormState({ ...formState, location: e.target.value })}
-                  className="input input-bordered w-full pl-10"
-                  placeholder="City, Country"
+                  className="input input-bordered w-full pl-10 pr-10"
+                  placeholder={isDetectingLocation ? "Detecting location..." : "City, Country"}
                 />
+                {isDetectingLocation && (
+                  <span className="loading loading-spinner loading-xs absolute top-1/2 transform -translate-y-1/2 right-3" />
+                )}
               </div>
             </div>
 

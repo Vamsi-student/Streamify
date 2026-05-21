@@ -310,7 +310,7 @@ export async function onboard(req, res) {
   try {
     const userId = req.user._id;
 
-    const { fullName, bio, nativeLanguage, learningLanguage, location } = req.body;
+    const { fullName, bio, nativeLanguage, learningLanguage, location, profilePic } = req.body;
 
     const nameResult = validateFullName(fullName);
     if (!nameResult.valid) return res.status(400).json({ message: nameResult.message });
@@ -328,18 +328,20 @@ export async function onboard(req, res) {
       return res.status(400).json({ message: "Location is required" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        fullName: nameResult.value,
-        bio: bioResult.value,
-        nativeLanguage: nativeResult.value,
-        learningLanguage: learnResult.value,
-        location: location.trim(),
-        isOnboarded: true,
-      },
-      { new: true }
-    );
+    const updateFields = {
+      fullName: nameResult.value,
+      bio: bioResult.value,
+      nativeLanguage: nativeResult.value,
+      learningLanguage: learnResult.value,
+      location: location.trim(),
+      isOnboarded: true,
+    };
+
+    if (profilePic && typeof profilePic === "string" && profilePic.trim()) {
+      updateFields.profilePic = profilePic.trim();
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateFields, { new: true });
 
     if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
