@@ -3,7 +3,8 @@ import { ShipWheelIcon } from "lucide-react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin.js";
 
-const GOOGLE_AUTH_URL = `${import.meta.env.VITE_API_URL}/auth/google`;
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000/api" : "/api";
+const GOOGLE_AUTH_URL = `${BASE_URL}/auth/google`;
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({
