@@ -54,7 +54,7 @@ const NotificationsPage = () => {
                       className="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="card-body p-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between">
                           <div className="flex items-center gap-3">
                             <div className="avatar w-14 h-14 rounded-full bg-base-300">
                               <img src={request.sender.profilePic} alt={request.sender.fullName} />
@@ -72,16 +72,16 @@ const NotificationsPage = () => {
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 w-full sm:w-auto">
                             <button
-                              className="btn btn-primary btn-sm"
+                              className="btn btn-primary btn-sm flex-1 sm:flex-none"
                               onClick={() => acceptRequestMutation(request._id)}
                               disabled={isAccepting || isRejecting}
                             >
                               Accept
                             </button>
                             <button
-                              className="btn btn-ghost btn-sm text-error"
+                              className="btn btn-ghost btn-sm text-error flex-1 sm:flex-none"
                               onClick={() => rejectRequestMutation(request._id)}
                               disabled={isAccepting || isRejecting}
                             >
@@ -108,8 +108,8 @@ const NotificationsPage = () => {
                   {acceptedRequests.map((notification) => (
                     <div key={notification._id} className="card bg-base-200 shadow-sm">
                       <div className="card-body p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="avatar mt-1 size-10 rounded-full">
+                        <div className="flex flex-col sm:flex-row items-start gap-3">
+                          <div className="avatar mt-1 size-10 rounded-full shrink-0">
                             <img
                               src={notification.recipient.profilePic}
                               alt={notification.recipient.fullName}
@@ -125,7 +125,7 @@ const NotificationsPage = () => {
                               Recently
                             </p>
                           </div>
-                          <div className="badge badge-success">
+                          <div className="badge badge-success shrink-0">
                             <MessageSquareIcon className="h-3 w-3 mr-1" />
                             New Friend
                           </div>

@@ -69,7 +69,7 @@ const MessageSearchModal = ({ onClose }) => {
           </button>
         </div>
 
-        <div className="max-h-96 overflow-y-auto p-2">
+        <div className="max-h-[40dvh] lg:max-h-96 overflow-y-auto p-2">
           {searching && (
             <div className="flex justify-center py-8">
               <span className="loading loading-spinner loading-sm opacity-50" />

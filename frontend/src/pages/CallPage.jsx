@@ -84,7 +84,7 @@ const CallPage = () => {
   if (isLoading || isConnecting) return <PageLoader />;
 
   return (
-    <div className="h-screen w-full bg-base-300">
+    <div className="h-dvh w-full bg-base-300">
       {client && call ? (
         <StreamVideo client={client}>
           <StreamCall call={call}>
@@ -110,8 +110,10 @@ const CallContent = () => {
 
   return (
     <StreamTheme>
-      <SpeakerLayout />
-      <CallControls />
+      <div className="h-full flex flex-col">
+        <SpeakerLayout />
+        <CallControls />
+      </div>
     </StreamTheme>
   );
 };

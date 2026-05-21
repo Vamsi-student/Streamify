@@ -68,7 +68,7 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
+    <div className="min-h-dvh py-6 md:py-12 flex items-center justify-center p-4 sm:p-6 md:p-8">
       <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-5xl mx-auto bg-base-100 rounded-xl shadow-lg overflow-hidden">
         <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
           <div className="mb-4 flex items-center justify-start gap-2">
@@ -144,7 +144,7 @@ const ForgotPasswordPage = () => {
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
                         onPaste={index === 0 ? handleOtpPaste : undefined}
-                        className="input input-bordered w-11 h-12 text-center text-lg font-bold"
+                        className="input input-bordered w-10 sm:w-11 h-12 text-center text-lg font-bold"
                       />
                     ))}
                   </div>

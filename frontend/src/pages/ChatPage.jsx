@@ -75,10 +75,10 @@ const ChatPage = () => {
   if (loading || !chatClient || !channel) return <ChatLoader />;
 
   return (
-    <div className="h-[93vh]">
-      <Chat client={chatClient}>
+    <div className="h-full flex flex-col min-h-0">
+      <Chat client={chatClient} theme={`str-chat__theme-${document.documentElement.getAttribute('data-theme') || 'night'}`}>
         <Channel channel={channel} Message={MessageWithReadReceipt}>
-          <div className="w-full relative">
+          <div className="w-full h-full relative flex flex-col">
             <div className="absolute top-2 right-2 z-10 flex gap-1">
               <button
                 onClick={() => setShowSearch(true)}
@@ -99,7 +99,6 @@ const ChatPage = () => {
           <Thread />
         </Channel>
       </Chat>
-
       {showSearch && <MessageSearchModal onClose={() => setShowSearch(false)} />}
     </div>
   );

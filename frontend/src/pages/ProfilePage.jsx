@@ -105,14 +105,14 @@ const ProfilePage = () => {
             </div>
 
             {!isOwnProfile && (
-              <div className="flex gap-2">
-                <Link to={`/chat/${user._id}`} className="btn btn-primary gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Link to={`/chat/${user._id}`} className="btn btn-primary gap-2 flex-1 sm:flex-none">
                   <MessageCircleIcon className="size-4" />
                   Message
                 </Link>
                 {!isFriend && (
                   <button
-                    className={`btn gap-2 ${hasPendingRequest ? "btn-disabled" : "btn-outline"}`}
+                    className={`btn gap-2 flex-1 sm:flex-none ${hasPendingRequest ? "btn-disabled" : "btn-outline"}`}
                     disabled={hasPendingRequest || isPending}
                     onClick={() => sendReqMutation(user._id)}
                   >

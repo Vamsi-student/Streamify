@@ -86,7 +86,7 @@ const VerifyEmailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="min-h-dvh py-6 md:py-12 flex items-center justify-center">
         <span className="loading loading-spinner loading-lg" />
       </div>
     );
@@ -95,7 +95,7 @@ const VerifyEmailPage = () => {
   if (authUser?.isVerified) return null;
 
   return (
-    <div className="h-screen flex items-center justify-center p-4">
+    <div className="min-h-dvh py-6 md:py-12 flex items-center justify-center p-4">
       <div className="card bg-base-200 w-full max-w-md p-6 sm:p-8">
         <div className="text-center mb-6">
           <div className="mx-auto size-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -119,7 +119,7 @@ const VerifyEmailPage = () => {
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={index === 0 ? handlePaste : undefined}
-              className="input input-bordered w-11 h-12 text-center text-lg font-bold"
+              className="input input-bordered w-10 sm:w-11 h-12 text-center text-lg font-bold"
             />
           ))}
         </div>

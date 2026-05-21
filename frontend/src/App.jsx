@@ -38,7 +38,7 @@ const App = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="h-screen" data-theme={theme}>
+      <div className="min-h-dvh" data-theme={theme}>
         <StreamChatProvider>
           <Routes>
             <Route path="*" element={<Navigate to={"/login"} />} />
@@ -55,7 +55,7 @@ const App = () => {
 
   if (!isVerified) {
     return (
-      <div className="h-screen" data-theme={theme}>
+      <div className="min-h-dvh" data-theme={theme}>
         <StreamChatProvider>
           <Routes>
             <Route path="*" element={<Navigate to={"/verify-email"} />} />
@@ -70,7 +70,7 @@ const App = () => {
 
   if (!isOnboarded) {
     return (
-      <div className="h-screen" data-theme={theme}>
+      <div className="min-h-dvh" data-theme={theme}>
         <StreamChatProvider>
           <Routes>
             <Route path="*" element={<Navigate to={"/onboarding"} />} />
@@ -83,7 +83,7 @@ const App = () => {
   }
 
   return (
-    <div className="h-screen" data-theme={theme}>
+    <div className="min-h-dvh" data-theme={theme}>
       <StreamChatProvider>
         <Routes>
           <Route

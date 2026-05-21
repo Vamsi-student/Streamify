@@ -53,7 +53,7 @@ const MessagesPage = () => {
   const sort = { last_message_at: -1 };
 
   return (
-    <div className="h-[93vh] flex w-full">
+    <div className="h-full flex w-full min-h-0">
       <Chat client={chatClient} theme={`str-chat__theme-${document.documentElement.getAttribute('data-theme') || 'night'}`}>
 
         {/* Left Side: Channel List */}
@@ -69,7 +69,11 @@ const MessagesPage = () => {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <ChannelList filters={filters} sort={sort} />
+            <ChannelList
+              filters={filters}
+              sort={sort}
+              setActiveChannelOnMount={window.innerWidth >= 768}
+            />
           </div>
         </div>
 

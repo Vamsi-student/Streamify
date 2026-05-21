@@ -38,10 +38,10 @@ const Navbar = () => {
             <div />
           )}
 
-          <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+            <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             <Link to={"/notifications"}>
-              <button className="btn btn-ghost btn-circle">
-                <BellIcon className="h-6 w-6 text-base-content opacity-70" />
+              <button className="btn btn-ghost btn-circle btn-sm lg:btn-md">
+                <BellIcon className="h-5 w-5 lg:h-6 lg:w-6 text-base-content opacity-70" />
               </button>
             </Link>
           </div>
@@ -50,14 +50,14 @@ const Navbar = () => {
           <ThemeSelector />
 
           <Link to={`/profile/${authUser?._id}`} className="avatar">
-            <div className="w-9 rounded-full">
+            <div className="w-7 lg:w-9 rounded-full">
               <img src={authUser?.profilePic} alt="User Avatar" rel="noreferrer" />
             </div>
           </Link>
 
           {/* Logout button */}
-          <button className="btn btn-ghost btn-circle" onClick={logoutMutation}>
-            <LogOutIcon className="h-6 w-6 text-base-content opacity-70" />
+          <button className="btn btn-ghost btn-circle btn-sm lg:btn-md" onClick={logoutMutation}>
+            <LogOutIcon className="h-5 w-5 lg:h-6 lg:w-6 text-base-content opacity-70" />
           </button>
         </div>
       </div>
