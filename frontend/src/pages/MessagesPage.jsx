@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useStreamChat } from "../context/StreamChatContext";
+import { useNavigate } from "react-router";
 
 import {
   Channel,
@@ -22,11 +23,29 @@ import MessageWithReadReceipt from "../components/MessageWithReadReceipt";
 import { PlusIcon } from "lucide-react";
 import CreateGroupModal from "../components/CreateGroupModal";
 
+const ChannelRedirector = () => {
+  const { channel } = useChannelStateContext();
+  const { authUser } = useAuthUser();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (channel && window.innerWidth < 768) {
+      const otherMemberId = Object.keys(channel.state.members).find((id) => id !== authUser._id);
+      if (otherMemberId) {
+        navigate(`/chat/${otherMemberId}`);
+      }
+    }
+  }, [channel, authUser, navigate]);
+
+  return null;
+};
+
 const MessagesPage = () => {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
   const { authUser } = useAuthUser();
   const { chatClient } = useStreamChat();
+  const navigate = useNavigate();
 
   if (!chatClient) return <ChatLoader />;
 
@@ -38,7 +57,7 @@ const MessagesPage = () => {
       <Chat client={chatClient} theme={`str-chat__theme-${document.documentElement.getAttribute('data-theme') || 'night'}`}>
 
         {/* Left Side: Channel List */}
-        <div className="w-80 border-r border-base-300 flex flex-col bg-base-100">
+        <div className="w-full md:w-80 border-r border-base-300 flex flex-col bg-base-100">
           <div className="p-4 border-b border-base-300 flex justify-between items-center bg-base-200">
             <h2 className="font-bold text-lg">Messages</h2>
             <button
@@ -54,9 +73,10 @@ const MessagesPage = () => {
           </div>
         </div>
 
-        {/* Right Side: Active Channel */}
-        <div className="flex-1 bg-base-200 relative h-full">
+        {/* Right Side: Active Channel (hidden on mobile, uses redirector instead) */}
+        <div className="hidden md:block flex-1 bg-base-200 relative h-full">
           <Channel Message={MessageWithReadReceipt}>
+            <ChannelRedirector />
             <div className="w-full h-full relative">
               <ActiveCallButton />
               <Window>
