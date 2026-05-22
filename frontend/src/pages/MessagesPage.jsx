@@ -57,7 +57,7 @@ const MessagesPage = () => {
       <Chat client={chatClient} theme={`str-chat__theme-${document.documentElement.getAttribute('data-theme') || 'night'}`}>
 
         {/* Left Side: Channel List */}
-        <div className="w-full md:w-80 border-r border-base-300 flex flex-col bg-base-100">
+        <div className="w-full md:w-80 border-r border-base-300 flex flex-col bg-base-100 h-full">
           <div className="p-4 border-b border-base-300 flex justify-between items-center bg-base-200">
             <h2 className="font-bold text-lg">Messages</h2>
             <button
@@ -73,6 +73,12 @@ const MessagesPage = () => {
               filters={filters}
               sort={sort}
               setActiveChannelOnMount={window.innerWidth >= 768}
+              onSelectChannel={(channel) => {
+                if (window.innerWidth < 768) {
+                  const otherMemberId = Object.keys(channel.state.members).find((id) => id !== authUser._id);
+                  if (otherMemberId) navigate(`/chat/${otherMemberId}`);
+                }
+              }}
             />
           </div>
         </div>
