@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { verifyEmail, resendOTP } from "../lib/api";
 import { MailIcon, RefreshCwIcon, LogOutIcon } from "lucide-react";
 import toast from "react-hot-toast";
@@ -10,6 +10,7 @@ const STORAGE_KEY = "verify_email";
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
@@ -26,6 +27,7 @@ const VerifyEmailPage = () => {
     mutationFn: () => verifyEmail({ email, otp: otp.join("") }),
     onSuccess: (data) => {
       sessionStorage.removeItem(STORAGE_KEY);
+      queryClient.setQueryData(["authUser"], { user: data?.user });
       toast.success("Email verified successfully!");
       navigate(data?.user?.isOnboarded ? "/" : "/onboarding", { replace: true });
     },

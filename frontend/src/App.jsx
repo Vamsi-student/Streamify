@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useLocation, Route, Routes } from "react-router";
+import { Navigate, useLocation, Route, Routes } from "react-router";
 
 import HomePage from "./pages/HomePage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
@@ -25,20 +25,9 @@ import usePushNotifications from "./hooks/usePushNotifications.js";
 import useFriendRequestPoller from "./hooks/useFriendRequestPoller.js";
 import { useThemeStore } from "./store/useThemeStore.js";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/verify-email", "/forgot-password", "/reset-password"];
 
 function PublicRouteGuard() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    const isPublic = PUBLIC_PATHS.some((p) => location.pathname.startsWith(p));
-    if (!isPublic) {
-      navigate("/login", { replace: true });
-    }
-  }, [location.pathname]);
-
-  return null;
+  return <Navigate to="/login" replace />;
 }
 
 const App = () => {
@@ -90,7 +79,7 @@ const App = () => {
         <StreamChatProvider>
           <Routes>
             <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="*" element={<PublicRouteGuard />} />
+            <Route path="*" element={<Navigate to="/verify-email" replace />} />
           </Routes>
         </StreamChatProvider>
         <Toaster />
