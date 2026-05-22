@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router";
+import { useEffect, useRef } from "react";
+import { useNavigate, useLocation, Route, Routes } from "react-router";
 
 import HomePage from "./pages/HomePage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
@@ -24,12 +25,38 @@ import usePushNotifications from "./hooks/usePushNotifications.js";
 import useFriendRequestPoller from "./hooks/useFriendRequestPoller.js";
 import { useThemeStore } from "./store/useThemeStore.js";
 
+const PUBLIC_PATHS = ["/login", "/signup", "/verify-email", "/forgot-password", "/reset-password"];
+
+function PublicRouteGuard() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const isPublic = PUBLIC_PATHS.some((p) => location.pathname.startsWith(p));
+    if (!isPublic) {
+      navigate("/login", { replace: true });
+    }
+  }, [location.pathname]);
+
+  return null;
+}
+
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
   const { theme } = useThemeStore();
 
   usePushNotifications();
   useFriendRequestPoller();
+
+  const location = useLocation();
+  const prevPathRef = useRef(location.pathname);
+  useEffect(() => {
+    if (prevPathRef.current !== location.pathname) {
+      console.log(`[NAV] ${prevPathRef.current} → ${location.pathname}`);
+      prevPathRef.current = location.pathname;
+    }
+  }, [location.pathname]);
+
   const isAuthenticated = Boolean(authUser);
   const isVerified = authUser?.isVerified !== false;
   const isOnboarded = authUser?.isOnboarded;
@@ -41,12 +68,12 @@ const App = () => {
       <div className="min-h-dvh" data-theme={theme}>
         <StreamChatProvider>
           <Routes>
-            <Route path="*" element={<Navigate to={"/login"} />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="*" element={<PublicRouteGuard />} />
           </Routes>
         </StreamChatProvider>
         <Toaster />
@@ -55,13 +82,15 @@ const App = () => {
   }
 
   if (!isVerified) {
+    if (authUser?.email) {
+      sessionStorage.setItem("verify_email", authUser.email);
+    }
     return (
       <div className="min-h-dvh" data-theme={theme}>
         <StreamChatProvider>
           <Routes>
-            <Route path="*" element={<Navigate to={"/verify-email"} />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/logout" element={<VerifyEmailPage />} />
+            <Route path="*" element={<PublicRouteGuard />} />
           </Routes>
         </StreamChatProvider>
         <Toaster />
@@ -74,8 +103,8 @@ const App = () => {
       <div className="min-h-dvh" data-theme={theme}>
         <StreamChatProvider>
           <Routes>
-            <Route path="*" element={<Navigate to={"/onboarding"} />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="*" element={<PublicRouteGuard />} />
           </Routes>
         </StreamChatProvider>
         <Toaster />
@@ -139,7 +168,7 @@ const App = () => {
               </Layout>
             }
           />
-          <Route path="*" element={<Navigate to={"/"} />} />
+          <Route path="*" element={<PublicRouteGuard />} />
         </Routes>
       </StreamChatProvider>
       <Toaster />

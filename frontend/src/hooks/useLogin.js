@@ -17,6 +17,7 @@ const useLogin = () => {
     onError: (error) => {
       const data = error.response?.data;
       if (data?.needsVerification) {
+        sessionStorage.setItem("verify_email", data.email);
         toast.error(data.message || "Please verify your email first");
         navigate("/verify-email", { state: { email: data.email } });
       }

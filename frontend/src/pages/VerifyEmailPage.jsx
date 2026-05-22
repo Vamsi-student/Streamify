@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { verifyEmail, resendOTP, logout } from "../lib/api";
-import { MailIcon, ArrowLeftIcon, RefreshCwIcon, LogOutIcon } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { verifyEmail, resendOTP } from "../lib/api";
+import { MailIcon, RefreshCwIcon, LogOutIcon } from "lucide-react";
 import toast from "react-hot-toast";
-import useAuthUser from "../hooks/useAuthUser";
 
 const STORAGE_KEY = "verify_email";
 
@@ -15,50 +14,23 @@ const VerifyEmailPage = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
-  const { authUser, isLoading } = useAuthUser();
-
-  const email = location.state?.email || sessionStorage.getItem(STORAGE_KEY);
+  const email = sessionStorage.getItem(STORAGE_KEY) || location.state?.email || "";
 
   useEffect(() => {
-    if (email && !sessionStorage.getItem(STORAGE_KEY)) {
-      sessionStorage.setItem(STORAGE_KEY, email);
-    }
-  }, [email]);
-
-  useEffect(() => {
-    if (authUser?.isVerified) {
-      sessionStorage.removeItem(STORAGE_KEY);
-      navigate(authUser?.isOnboarded ? "/" : "/onboarding", { replace: true });
-    }
-  }, [authUser, navigate]);
-
-  useEffect(() => {
-    if (!email && !isLoading && !authUser) {
+    if (!email) {
       navigate("/signup", { replace: true });
     }
-  }, [email, isLoading, authUser, navigate]);
-
-  const queryClient = useQueryClient();
+  }, []);
 
   const { mutate: verifyMutation, isPending: isVerifying } = useMutation({
     mutationFn: () => verifyEmail({ email, otp: otp.join("") }),
     onSuccess: (data) => {
       sessionStorage.removeItem(STORAGE_KEY);
-      queryClient.invalidateQueries({ queryKey: ["authUser"] });
       toast.success("Email verified successfully!");
       navigate(data?.user?.isOnboarded ? "/" : "/onboarding", { replace: true });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Verification failed");
-    },
-  });
-
-  const { mutate: logoutMutation } = useMutation({
-    mutationFn: logout,
-    onSuccess: () => {
-      sessionStorage.removeItem(STORAGE_KEY);
-      queryClient.invalidateQueries({ queryKey: ["authUser"] });
-      navigate("/login");
     },
   });
 
@@ -101,11 +73,7 @@ const VerifyEmailPage = () => {
   };
 
   if (!email) {
-    return (
-      <div className="min-h-dvh py-6 md:py-12 flex items-center justify-center">
-        <span className="loading loading-spinner loading-lg" />
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -161,12 +129,15 @@ const VerifyEmailPage = () => {
           </button>
         </div>
 
-        <div className="flex justify-center gap-4 mt-2">
-          <button onClick={logoutMutation} className="btn btn-ghost btn-xs gap-1">
-            <ArrowLeftIcon className="size-3" /> Back to Login
-          </button>
-          <button onClick={logoutMutation} className="btn btn-ghost btn-xs gap-1 text-error">
-            <LogOutIcon className="size-3" /> Sign out
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => {
+              sessionStorage.removeItem(STORAGE_KEY);
+              navigate("/login");
+            }}
+            className="btn btn-ghost btn-xs gap-1 text-error"
+          >
+            <LogOutIcon className="size-3" /> Back to Login
           </button>
         </div>
       </div>
