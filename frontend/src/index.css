@@ -76,6 +76,19 @@ body,
   @apply border-t border-base-300;
 }
 
+@media (max-width: 767px) {
+  .str-chat__channel-list {
+    position: relative !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    transform: none !important;
+    flex-basis: auto !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
 @media (max-width: 768px) {
   .str-chat__container {
     height: 100% !important;
