@@ -46,6 +46,7 @@ async function sendEmail({ to, subject, html }) {
   } catch (err) {
     const code = err.code || "UNKNOWN";
     const response = err.response?.toString() || "";
+    const fullError = `${code} ${err.message || ""} ${response}`.toLowerCase();
 
     console.error(`[EMAIL] FAILED to send to ${to}: "${subject}"`);
     console.error(`[EMAIL]   Code: ${code}`);
@@ -54,11 +55,11 @@ async function sendEmail({ to, subject, html }) {
       console.error(`[EMAIL]   SMTP response code: ${err.responseCode}`);
     }
 
-    if (response.includes("535") || response.includes("Authentication")) {
+    if (fullError.includes("535") || fullError.includes("auth") || fullError.includes("credentials") || fullError.includes("invalid login")) {
       console.error(`[EMAIL]   ⛔ AUTH FAILED — BREVO_SMTP_USER or BREVO_SMTP_PASS is invalid`);
-    } else if (response.includes("550") || response.includes("not verified")) {
+    } else if (fullError.includes("550") || fullError.includes("not verified") || fullError.includes("sender")) {
       console.error(`[EMAIL]   ⛔ SENDER NOT VERIFIED — "${FROM}" must be verified in Brevo dashboard`);
-    } else if (response.includes("554") || response.includes("not allowed")) {
+    } else if (fullError.includes("554") || fullError.includes("not allowed")) {
       console.error(`[EMAIL]   ⛔ SENDER DOMAIN NOT VERIFIED — Verify the sender domain in Brevo`);
     } else if (code === "ESOCKET" || code === "ETIMEDOUT" || code === "ECONNECTION") {
       console.error(`[EMAIL]   ⛔ CONNECTION FAILED — Cannot reach smtp-relay.brevo.com:587`);
@@ -86,12 +87,12 @@ export async function verifyConnection() {
       console.error(`[EMAIL]   BREVO_SMTP_PASS is not set in .env`);
     }
 
-    const msg = err.message?.toLowerCase() || "";
-    if (msg.includes("auth") || msg.includes("535") || msg.includes("credentials")) {
+    const fullError = `${err.code || ""} ${err.message || ""} ${err.response?.toString() || ""}`.toLowerCase();
+    if (fullError.includes("auth") || fullError.includes("535") || fullError.includes("credentials") || fullError.includes("invalid login")) {
       console.error(`[EMAIL]   ⛔ Invalid SMTP credentials — check BREVO_SMTP_USER and BREVO_SMTP_PASS`);
-    } else if (msg.includes("verify") || msg.includes("sender") || msg.includes("550")) {
+    } else if (fullError.includes("550") || fullError.includes("sender") || fullError.includes("verify")) {
       console.error(`[EMAIL]   ⛔ Sender "${FROM}" is not verified in Brevo dashboard`);
-    } else if (msg.includes("connect") || msg.includes("econnrefused") || msg.includes("enotfound")) {
+    } else if (fullError.includes("connect") || fullError.includes("econnrefused") || fullError.includes("enotfound") || fullError.includes("esocket") || fullError.includes("etimedout")) {
       console.error(`[EMAIL]   ⛔ Cannot connect to smtp-relay.brevo.com — check network/firewall`);
     } else {
       console.error(`[EMAIL]   ⛔ ${err.message}`);
