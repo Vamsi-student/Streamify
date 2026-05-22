@@ -13,6 +13,7 @@ import {
   Thread,
   Window,
   useChannelStateContext,
+  useChatContext,
 } from "stream-chat-react";
 import toast from "react-hot-toast";
 
@@ -40,6 +41,26 @@ const ChannelRedirector = () => {
   return null;
 };
 
+const ActiveChannelWatcher = () => {
+  const { channel } = useChatContext();
+  const { authUser } = useAuthUser();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (channel && window.innerWidth < 768) {
+      const members = channel.state?.members;
+      if (members) {
+        const otherMemberId = Object.keys(members).find((id) => id !== authUser._id);
+        if (otherMemberId) {
+          navigate(`/chat/${otherMemberId}`);
+        }
+      }
+    }
+  }, [channel, authUser, navigate]);
+
+  return null;
+};
+
 const MessagesPage = () => {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
@@ -55,6 +76,7 @@ const MessagesPage = () => {
   return (
     <div className="h-full flex w-full min-h-0">
       <Chat client={chatClient} theme={`str-chat__theme-${document.documentElement.getAttribute('data-theme') || 'night'}`}>
+        <ActiveChannelWatcher />
 
         {/* Left Side: Channel List */}
         <div className="w-full md:w-80 border-r border-base-300 flex flex-col bg-base-100 h-full">
@@ -73,12 +95,6 @@ const MessagesPage = () => {
               filters={filters}
               sort={sort}
               setActiveChannelOnMount={window.innerWidth >= 768}
-              onSelectChannel={(channel) => {
-                if (window.innerWidth < 768) {
-                  const otherMemberId = Object.keys(channel.state.members).find((id) => id !== authUser._id);
-                  if (otherMemberId) navigate(`/chat/${otherMemberId}`);
-                }
-              }}
             />
           </div>
         </div>
