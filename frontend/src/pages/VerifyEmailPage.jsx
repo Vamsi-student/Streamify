@@ -6,17 +6,28 @@ import { MailIcon, ArrowLeftIcon, RefreshCwIcon, LogOutIcon } from "lucide-react
 import toast from "react-hot-toast";
 import useAuthUser from "../hooks/useAuthUser";
 
+const STORAGE_KEY = "verify_email";
+
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email;
+
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
   const { authUser, isLoading } = useAuthUser();
 
+  const email = location.state?.email || sessionStorage.getItem(STORAGE_KEY);
+
+  useEffect(() => {
+    if (email && !sessionStorage.getItem(STORAGE_KEY)) {
+      sessionStorage.setItem(STORAGE_KEY, email);
+    }
+  }, [email]);
+
   useEffect(() => {
     if (authUser?.isVerified) {
+      sessionStorage.removeItem(STORAGE_KEY);
       navigate(authUser?.isOnboarded ? "/" : "/onboarding", { replace: true });
     }
   }, [authUser, navigate]);
@@ -32,6 +43,7 @@ const VerifyEmailPage = () => {
   const { mutate: verifyMutation, isPending: isVerifying } = useMutation({
     mutationFn: () => verifyEmail({ email, otp: otp.join("") }),
     onSuccess: (data) => {
+      sessionStorage.removeItem(STORAGE_KEY);
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
       toast.success("Email verified successfully!");
       navigate(data?.user?.isOnboarded ? "/" : "/onboarding", { replace: true });
@@ -44,6 +56,7 @@ const VerifyEmailPage = () => {
   const { mutate: logoutMutation } = useMutation({
     mutationFn: logout,
     onSuccess: () => {
+      sessionStorage.removeItem(STORAGE_KEY);
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
       navigate("/login");
     },
