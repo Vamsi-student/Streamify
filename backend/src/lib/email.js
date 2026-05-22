@@ -1,28 +1,36 @@
 import "dotenv/config";
-import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
 import {
   verificationOTPEmail,
   passwordResetOTPEmail,
   welcomeEmail,
 } from "./email/templates.js";
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY || "");
-
 const FROM = process.env.SMTP_FROM || "Streamify <noreply@streamify.app>";
+
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASS,
+  },
+});
 
 async function sendEmail({ to, subject, html }) {
   try {
-    const [response] = await sgMail.send({
+    const info = await transporter.sendMail({
       from: FROM,
       to,
       subject,
       html,
     });
 
-    console.log(`Email sent to ${to}: ${subject} (status: ${response.statusCode})`);
-    return response;
+    console.log(`Email sent to ${to}: ${subject} (messageId: ${info.messageId})`);
+    return info;
   } catch (err) {
-    console.error("Error sending email:", err.response?.body || err);
+    console.error("Error sending email:", err);
     throw err;
   }
 }
@@ -59,11 +67,11 @@ export async function sendOTPEmail(email, otp, purpose = "verification") {
 }
 
 export async function verifyEmailConfig() {
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error("SendGrid: SENDGRID_API_KEY is not set");
+  if (!process.env.BREVO_SMTP_USER || !process.env.BREVO_SMTP_PASS) {
+    console.error("Brevo: BREVO_SMTP_USER or BREVO_SMTP_PASS is not set");
     return;
   }
   if (process.env.NODE_ENV !== "production") {
-    console.log("SendGrid: API key is configured");
+    console.log("Brevo: SMTP credentials are configured");
   }
 }
