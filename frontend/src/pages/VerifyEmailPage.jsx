@@ -9,34 +9,37 @@ import useAuthUser from "../hooks/useAuthUser";
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { authUser, isLoading } = useAuthUser();
+  const email = location.state?.email;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
-  useEffect(() => {
-    if (!isLoading && !authUser) {
-      navigate("/login");
-    }
-  }, [authUser, isLoading, navigate]);
+  const { authUser, isLoading } = useAuthUser();
 
   useEffect(() => {
     if (authUser?.isVerified) {
-      navigate("/");
+      navigate(authUser?.isOnboarded ? "/" : "/onboarding", { replace: true });
     }
   }, [authUser, navigate]);
 
+  useEffect(() => {
+    if (!email && !isLoading && !authUser) {
+      navigate("/signup", { replace: true });
+    }
+  }, [email, isLoading, authUser, navigate]);
+
+  const queryClient = useQueryClient();
+
   const { mutate: verifyMutation, isPending: isVerifying } = useMutation({
-    mutationFn: () => verifyEmail(otp.join("")),
-    onSuccess: () => {
+    mutationFn: () => verifyEmail({ email, otp: otp.join("") }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["authUser"] });
       toast.success("Email verified successfully!");
-      navigate(authUser?.isOnboarded ? "/" : "/onboarding");
+      navigate(data?.user?.isOnboarded ? "/" : "/onboarding", { replace: true });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Verification failed");
     },
   });
-
-  const queryClient = useQueryClient();
 
   const { mutate: logoutMutation } = useMutation({
     mutationFn: logout,
@@ -47,7 +50,7 @@ const VerifyEmailPage = () => {
   });
 
   const { mutate: resendMutation, isPending: isResending } = useMutation({
-    mutationFn: resendOTP,
+    mutationFn: () => resendOTP(email),
     onSuccess: () => {
       toast.success("New OTP sent to your email");
       setOtp(["", "", "", "", "", ""]);
@@ -84,15 +87,13 @@ const VerifyEmailPage = () => {
     inputRefs.current[focusIdx]?.focus();
   };
 
-  if (isLoading) {
+  if (!email) {
     return (
       <div className="min-h-dvh py-6 md:py-12 flex items-center justify-center">
         <span className="loading loading-spinner loading-lg" />
       </div>
     );
   }
-
-  if (authUser?.isVerified) return null;
 
   return (
     <div className="min-h-dvh py-6 md:py-12 flex items-center justify-center p-4">
@@ -103,7 +104,7 @@ const VerifyEmailPage = () => {
           </div>
           <h1 className="text-xl font-bold">Verify Your Email</h1>
           <p className="text-sm opacity-70 mt-2">
-            Enter the 6-digit code sent to <strong>{authUser?.email}</strong>
+            Enter the 6-digit code sent to <strong>{email}</strong>
           </p>
         </div>
 
@@ -127,7 +128,7 @@ const VerifyEmailPage = () => {
         <button
           className="btn btn-primary w-full"
           onClick={verifyMutation}
-          disabled={otp.some((d) => !d) || isVerifying}
+          disabled={otp.some((d) => !d) || isVerifying || !email}
         >
           {isVerifying ? (
             <><span className="loading loading-spinner loading-xs" /> Verifying...</>

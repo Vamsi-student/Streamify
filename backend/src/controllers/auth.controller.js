@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { upsertStreamUser } from "../lib/stream.js";
 import User from "../models/user.js";
+import PendingUser from "../models/PendingUser.js";
 import RefreshToken from "../models/RefreshToken.js";
 import { sendOTPEmail } from "../lib/email.js";
 import {
@@ -16,6 +17,8 @@ import {
   getOTPExpiry,
   isOTPExpired,
   sanitizeUser,
+  RESEND_COOLDOWN_MS,
+  MAX_OTP_ATTEMPTS,
 } from "../lib/validators.js";
 
 const ACCESS_TOKEN_EXPIRY = "15m";
@@ -76,19 +79,78 @@ export async function signup(req, res) {
       return res.status(409).json({ message: "An account with this email already exists" });
     }
 
-    const idx = Math.floor(Math.random() * 100) + 1;
-    const randomAvatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${idx}`;
-
     const otp = generateOTP();
+    const otpHash = await bcrypt.hash(otp, 10);
 
-    const newUser = await User.create({
+    await PendingUser.findOneAndDelete({ email: emailResult.value });
+
+    await PendingUser.create({
       email: emailResult.value,
       fullName: nameResult.value,
       password: req.body.password,
+      otpHash,
+      otpExpires: getOTPExpiry(),
+    });
+
+    try {
+      await sendOTPEmail(emailResult.value, otp, "verification");
+    } catch (emailError) {
+      await PendingUser.findOneAndDelete({ email: emailResult.value });
+      console.error("Failed to send verification email:", emailError);
+      console.log(`\n📧 DEV OTP for ${emailResult.value}: ${otp}\n`);
+      return res.status(500).json({ message: "Failed to send verification email. Please try signing up again." });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "A verification code has been sent to your email.",
+      email: emailResult.value,
+    });
+  } catch (error) {
+    console.error("Error in signup controller", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// ─── VERIFY EMAIL ─────────────────────────────────────────────────────────────
+
+export async function verifyEmail(req, res) {
+  try {
+    const emailResult = validateEmail(req.body.email);
+    if (!emailResult.valid) return res.status(400).json({ message: emailResult.message });
+
+    const otpValidation = validateOTP(req.body.otp);
+    if (!otpValidation.valid) return res.status(400).json({ message: otpValidation.message });
+
+    const pending = await PendingUser.findOne({ email: emailResult.value });
+    if (!pending) {
+      return res.status(400).json({ message: "No signup request found for this email. Please sign up again." });
+    }
+
+    if (isOTPExpired(pending.otpExpires)) {
+      await PendingUser.findOneAndDelete({ email: emailResult.value });
+      return res.status(400).json({ message: "OTP has expired. Please sign up again." });
+    }
+
+    if (pending.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      await PendingUser.findOneAndDelete({ email: emailResult.value });
+      return res.status(400).json({ message: "Too many failed attempts. Please sign up again." });
+    }
+
+    const otpResult = await pending.verifyOTP(req.body.otp);
+    if (!otpResult.valid) {
+      return res.status(400).json({ message: otpResult.message });
+    }
+
+    const idx = Math.floor(Math.random() * 100) + 1;
+    const randomAvatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${idx}`;
+
+    const newUser = await User.create({
+      email: pending.email,
+      fullName: pending.fullName,
+      password: pending.password || undefined,
       profilePic: randomAvatar,
-      verificationOTP: otp,
-      verificationOTPExpires: getOTPExpiry(),
-      isVerified: false,
+      isVerified: true,
     });
 
     try {
@@ -101,67 +163,15 @@ export async function signup(req, res) {
       console.log("Error creating Stream user:", streamError);
     }
 
-    try {
-      await sendOTPEmail(newUser.email, otp, "verification");
-    } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-      console.log(`\n📧 DEV OTP for ${newUser.email}: ${otp}\n`);
-      await User.findByIdAndDelete(newUser._id);
-      return res.status(500).json({ message: "Failed to send verification email. Please try signing up again." });
-    }
+    await PendingUser.findOneAndDelete({ email: emailResult.value });
 
     const tokens = await generateTokens(newUser._id);
     setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
 
-    res.status(201).json({
-      success: true,
-      message: "Account created. Please verify your email using the OTP sent to your email.",
-      user: sanitizeUser(newUser),
-    });
-  } catch (error) {
-    console.error("Error in signup controller", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
-
-// ─── VERIFY EMAIL ─────────────────────────────────────────────────────────────
-
-export async function verifyEmail(req, res) {
-  try {
-    const otpResult = validateOTP(req.body.otp);
-    if (!otpResult.valid) return res.status(400).json({ message: otpResult.message });
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: "Email is already verified" });
-    }
-
-    if (!user.verificationOTP) {
-      return res.status(400).json({ message: "No OTP requested. Request a new one." });
-    }
-
-    if (isOTPExpired(user.verificationOTPExpires)) {
-      user.verificationOTP = null;
-      user.verificationOTPExpires = null;
-      await user.save();
-      return res.status(400).json({ message: "OTP has expired. Request a new one." });
-    }
-
-    if (user.verificationOTP !== req.body.otp) {
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
-
-    user.isVerified = true;
-    user.verificationOTP = null;
-    user.verificationOTPExpires = null;
-    await user.save();
-
     res.status(200).json({
       success: true,
       message: "Email verified successfully",
-      user: sanitizeUser(user),
+      user: sanitizeUser(newUser),
     });
   } catch (error) {
     console.error("Error in verifyEmail controller:", error);
@@ -173,26 +183,32 @@ export async function verifyEmail(req, res) {
 
 export async function resendOTP(req, res) {
   try {
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const emailResult = validateEmail(req.body.email);
+    if (!emailResult.valid) return res.status(400).json({ message: emailResult.message });
 
-    if (user.isVerified) {
-      return res.status(400).json({ message: "Email is already verified" });
+    const pending = await PendingUser.findOne({ email: emailResult.value });
+    if (!pending) {
+      return res.status(400).json({ message: "No signup request found for this email. Please sign up again." });
+    }
+
+    if (!pending.canResend()) {
+      const remaining = Math.ceil((30000 - (Date.now() - new Date(pending.lastResendAt).getTime())) / 1000);
+      return res.status(429).json({ message: `Please wait ${remaining}s before requesting a new code.` });
     }
 
     const otp = generateOTP();
-    user.verificationOTP = otp;
-    user.verificationOTPExpires = getOTPExpiry();
-    await user.save();
+    const otpHash = await bcrypt.hash(otp, 10);
+    pending.otpHash = otpHash;
+    pending.otpExpires = getOTPExpiry();
+    pending.otpAttempts = 0;
+    pending.lastResendAt = new Date();
+    await pending.save();
 
     try {
-      await sendOTPEmail(user.email, otp, "verification");
+      await sendOTPEmail(pending.email, otp, "verification");
     } catch (emailError) {
       console.error("Failed to send OTP email:", emailError);
-      console.log(`\n📧 DEV OTP for ${user.email}: ${otp}\n`);
-      user.verificationOTP = null;
-      user.verificationOTPExpires = null;
-      await user.save();
+      console.log(`\n📧 DEV OTP for ${pending.email}: ${otp}\n`);
       return res.status(500).json({ message: "Failed to send OTP. Try again later." });
     }
 
@@ -215,7 +231,17 @@ export async function login(req, res) {
     }
 
     const user = await User.findOne({ email: emailResult.value });
-    if (!user) return res.status(401).json({ message: "Invalid email or password" });
+    if (!user) {
+      const pending = await PendingUser.findOne({ email: emailResult.value });
+      if (pending) {
+        return res.status(401).json({
+          message: "Please verify your email before logging in. Check your inbox for the verification code.",
+          needsVerification: true,
+          email: emailResult.value,
+        });
+      }
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
 
     const isPasswordCorrect = await user.matchPassword(req.body.password);
     if (!isPasswordCorrect) return res.status(401).json({ message: "Invalid email or password" });
@@ -382,7 +408,8 @@ export async function forgotPassword(req, res) {
     }
 
     const otp = generateOTP();
-    user.resetOTP = otp;
+    const otpHash = await bcrypt.hash(otp, 10);
+    user.resetOTP = otpHash;
     user.resetOTPExpires = getOTPExpiry();
     await user.save();
 
@@ -432,7 +459,8 @@ export async function verifyResetOTP(req, res) {
       return res.status(400).json({ message: "OTP has expired. Request a new one." });
     }
 
-    if (user.resetOTP !== req.body.otp) {
+    const otpMatch = await bcrypt.compare(req.body.otp, user.resetOTP);
+    if (!otpMatch) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 

@@ -18,9 +18,9 @@ router.post("/logout", logout);
 
 router.post("/refresh", authLimiter, refreshToken);
 
-router.post("/verify-email", authenticateToken, verifyEmail);
+router.post("/verify-email", authLimiter, verifyEmail);
 
-router.post("/resend-otp", authenticateToken, authLimiter, resendOTP);
+router.post("/resend-otp", authLimiter, resendOTP);
 
 router.post("/onboarding", authenticateToken, onboard);
 

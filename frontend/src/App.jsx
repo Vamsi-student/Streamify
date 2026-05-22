@@ -46,6 +46,7 @@ const App = () => {
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
           </Routes>
         </StreamChatProvider>
         <Toaster />

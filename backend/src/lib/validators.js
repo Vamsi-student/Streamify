@@ -1,6 +1,8 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN = 6;
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
+export const RESEND_COOLDOWN_MS = 30 * 1000;
+export const MAX_OTP_ATTEMPTS = 5;
 
 export function validateEmail(email) {
   if (!email || typeof email !== "string") {

@@ -9,12 +9,12 @@ export const login = async (loginData) => {
   const response = await axiosInstance.post("/auth/login", loginData);
   return response.data;
 };
-export const verifyEmail = async (otp) => {
-  const response = await axiosInstance.post("/auth/verify-email", { otp });
+export const verifyEmail = async ({ email, otp }) => {
+  const response = await axiosInstance.post("/auth/verify-email", { email, otp });
   return response.data;
 };
-export const resendOTP = async () => {
-  const response = await axiosInstance.post("/auth/resend-otp");
+export const resendOTP = async (email) => {
+  const response = await axiosInstance.post("/auth/resend-otp", { email });
   return response.data;
 };
 export const logout = async () => {

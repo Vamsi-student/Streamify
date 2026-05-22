@@ -26,7 +26,7 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/auth/refresh")) {
-      const isPublicAuth = ["/auth/login", "/auth/signup", "/auth/forgot-password", "/auth/verify-reset-otp", "/auth/reset-password"].some(p => originalRequest.url?.includes(p));
+      const isPublicAuth = ["/auth/login", "/auth/signup", "/auth/forgot-password", "/auth/verify-reset-otp", "/auth/reset-password", "/auth/verify-email", "/auth/resend-otp"].some(p => originalRequest.url?.includes(p));
       if (isPublicAuth) {
         return Promise.reject(error);
       }

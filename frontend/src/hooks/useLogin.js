@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import { login } from "../lib/api";
 import toast from "react-hot-toast";
 
 const useLogin = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { mutate, isPending, error } = useMutation({
     mutationFn: login,
@@ -16,6 +18,7 @@ const useLogin = () => {
       const data = error.response?.data;
       if (data?.needsVerification) {
         toast.error(data.message || "Please verify your email first");
+        navigate("/verify-email", { state: { email: data.email } });
       }
     },
   });
