@@ -38,7 +38,7 @@
 
 **Streamify** is a full-stack, production-ready social platform purpose-built for language exchange. It connects learners worldwide through real-time messaging, video calls, and a rich social graph — all wrapped in a modern, responsive UI.
 
-Built with a security-first mindset and scalable architecture, Streamify handles the complete user journey: **onboarding → discovery → connection → communication**. The system integrates **Stream Chat** for enterprise-grade messaging, **Web Push API** for native notifications, **Gmail SMTP** for transactional emails, and **Google OAuth** for frictionless sign-in.
+Built with a security-first mindset and scalable architecture, Streamify handles the complete user journey: **onboarding → discovery → connection → communication**. The system integrates **Stream Chat** for enterprise-grade messaging, **Web Push API** for native notifications, **Brevo SMTP** for transactional emails, and **Google OAuth** for frictionless sign-in.
 
 ---
 
@@ -74,7 +74,7 @@ Built with a security-first mindset and scalable architecture, Streamify handles
 - OTP verification emails with branded HTML templates
 - Password reset flow with 6-digit OTP + intermediate reset token
 - Welcome emails on successful verification
-- Gmail SMTP integration with App Password authentication
+- Brevo SMTP integration with connection timeouts and startup verification
 
 ### 📹 Video Calling
 - One-click video call links shared in chat
@@ -142,7 +142,7 @@ Built with a security-first mindset and scalable architecture, Streamify handles
        │  WebSocket          │  Webhook     │  REST
        ▼                     ▼              ▼
 ┌──────────────┐     ┌──────────────┐     ┌──────────────────┐
-│ Stream Chat  │     │  Push Server │     │  Gmail SMTP      │
+│ Stream Chat  │     │  Push Server │     │  Brevo SMTP      │
 │  Cloud  ·   │     │  (web-push)  │     │  (Nodemailer)    │
 │  WebSocket   │     │              │     │  Transactional   │
 │  + Video     │     │  VAPID keys  │     │  Emails          │
@@ -155,7 +155,7 @@ Built with a security-first mindset and scalable architecture, Streamify handles
 3. Stream Chat client connects via WebSocket using server-generated token
 4. Messages flow through Stream Cloud → trigger webhook → push notification
 5. Friend requests and user data flow through REST endpoints
-6. Email OTPs sent via Gmail SMTP (dev fallback logs to console)
+6. Email OTPs sent via Brevo SMTP
 
 ---
 
@@ -173,7 +173,8 @@ streamify/
 │   │   │   ├── notification.controller.js  # Push subscription management
 │   │   │   └── webhook.controller.js # Stream Chat webhook → push relay
 │   │   ├── models/
-│   │   │   ├── user.js               # User schema (OTP, verification, friends)
+│   │   │   ├── user.js               # User schema (verification, friends)
+│   │   │   ├── PendingUser.js         # Pre-verification temp storage (TTL, hashed OTP)
 │   │   │   ├── FriendReq.js          # Friend request with compound indexes
 │   │   │   ├── PushSubscription.js   # Web push subscription storage
 │   │   │   └── RefreshToken.js       # JWT refresh token with TTL index
@@ -264,7 +265,7 @@ streamify/
 - **Node.js** ≥ 18
 - **MongoDB** (local or Atlas)
 - **Stream Chat** account ([free tier](https://getstream.io/chat/trial/))
-- **Gmail** account with [App Password](https://myaccount.google.com/apppasswords)
+- **Brevo** account ([free tier](https://www.brevo.com/)) with SMTP key
 - **Google OAuth** credentials ([console](https://console.cloud.google.com/apis/credentials))
 
 ### Clone & Install
@@ -341,13 +342,10 @@ GOOGLE_CLIENT_ID=<your-client-id>
 GOOGLE_CLIENT_SECRET=<your-client-secret>
 GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
 
-# Gmail SMTP (App Password required)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your.email@gmail.com
-SMTP_PASS=<16-char-app-password>
-SMTP_FROM="Streamify <your.email@gmail.com>"
+# Brevo SMTP (transactional emails)
+BREVO_SMTP_USER=<your-brevo-smtp-login>
+BREVO_SMTP_PASS=<xsmtpsib-...-key>
+SMTP_FROM="Streamify <verified-sender@example.com>"
 
 # Stream Chat
 STREAM_API_KEY=<your-stream-api-key>
@@ -380,19 +378,20 @@ VITE_VAPID_PUBLIC_KEY=<same-as-backend-vapid-public-key>
 └────┬─────┘     └────┬─────┘     └────┬─────┘     └────┬─────┘
      │                 │                 │                 │
      │  POST /signup   │                 │                 │
-     │────────────────▶│  Create user    │                 │
-     │                 │────────────────▶│                 │
-     │                 │  Store OTP      │                 │
+     │────────────────▶│  Create         │                 │
+     │                 │  PendingUser    │                 │
+     │                 │  (hashed OTP)   │                 │
      │                 │────────────────▶│                 │
      │                 │  Send OTP email │                 │
      │                 │──────────────────────────────────▶│
-     │  201 + JWT      │                 │                 │
+     │  200 { email }  │                 │                 │
      │◀────────────────│                 │                 │
      │                 │                 │                 │
-     │  POST /verify-email (OTP)         │                 │
-     │────────────────▶│  Verify OTP     │                 │
+     │  POST /verify-email (email + OTP) │                 │
+     │────────────────▶│  bcrypt.compare │                 │
      │                 │────────────────▶│                 │
-     │                 │  Mark verified  │                 │
+     │                 │  Create User    │                 │
+     │                 │  Delete Pending │                 │
      │  200 + user     │                 │                 │
      │◀────────────────│                 │                 │
      │                 │                 │                 │
@@ -410,8 +409,8 @@ VITE_VAPID_PUBLIC_KEY=<same-as-backend-vapid-public-key>
 - Refresh token rotation: old token deleted, new one issued on each refresh
 
 **Route Protection (4 tiers):**
-1. **Not authenticated** → only `/login`, `/signup`, `/forgot-password`, `/reset-password/:token`
-2. **Authenticated, not verified** → only `/verify-email`
+1. **Not authenticated** → only `/login`, `/signup`, `/verify-email`, `/forgot-password`, `/reset-password/:token`
+2. **Authenticated, not verified** → only `/verify-email`, `/onboarding`
 3. **Verified, not onboarded** → only `/onboarding`
 4. **Fully onboarded** → full application access
 
@@ -472,7 +471,7 @@ Show native notification → click → navigate to /chat/:senderId
 | **Rate Limiting** | Auth: 20 req/15min · General: 200 req/15min |
 | **Body Size Limit** | 10MB cap on JSON payloads |
 | **Sensitive Data** | Stripped via Mongoose `toJSON()` + `sanitizeUser()` |
-| **OTP** | 6-digit, 10-minute expiry, plain text (acceptable risk) |
+| **OTP** | 6-digit, 15-minute expiry (PendingUser TTL), hashed with bcrypt, max 5 attempts before invalidation, 30s resend cooldown |
 | **Forgot Password** | Generic error messages (no email enumeration) |
 | **Graceful Shutdown** | SIGTERM/SIGINT closes HTTP + DB connections |
 
@@ -487,8 +486,8 @@ Show native notification → click → navigate to /chat/:senderId
 | POST | `/login` | No | Yes | Login, returns JWT cookies |
 | POST | `/logout` | No | No | Clears cookies, deletes refresh token |
 | POST | `/refresh` | No | Yes | Rotates refresh token |
-| POST | `/verify-email` | Yes | No | Verify with 6-digit OTP |
-| POST | `/resend-otp` | Yes | Yes | Resend verification OTP |
+| POST | `/verify-email` | No | No | Verify with email + 6-digit OTP |
+| POST | `/resend-otp` | No | Yes | Resend verification OTP |
 | POST | `/onboarding` | Yes | No | Complete profile setup |
 | GET | `/me` | Yes | No | Get current user |
 | POST | `/forgot-password` | No | Yes | Send reset OTP to email |
