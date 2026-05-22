@@ -93,7 +93,7 @@ const App = () => {
         <StreamChatProvider>
           <Routes>
             <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="*" element={<PublicRouteGuard />} />
+            <Route path="*" element={<Navigate to="/onboarding" replace />} />
           </Routes>
         </StreamChatProvider>
         <Toaster />
@@ -157,7 +157,7 @@ const App = () => {
               </Layout>
             }
           />
-          <Route path="*" element={<PublicRouteGuard />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </StreamChatProvider>
       <Toaster />
