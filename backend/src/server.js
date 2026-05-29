@@ -14,6 +14,9 @@ import { verifyEmailConfig } from "./lib/email.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
+import dns from "dns";
+
+dns.setServers(['4.4.4.4','8.8.8.8']);
 
 dotenv.config();
 
